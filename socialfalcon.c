@@ -6,24 +6,8 @@
 #include <stdarg.h>
 #include <mysql.h>
 
-
-/* *** mode: 0 for probe *** */
-/* *** mode: 1 for qual  *** */
 #define PREDICTION_MODE 0
 
-/*
-#if PREDICTION_MODE==0
-  #define TOTAL_RATES 99072112
-  #define TOTAL_PROBES 1408395
-  #define GLOBAL_AVERAGE 3.603304
-#else
-  #define TOTAL_RATES 100480507
-  #define TOTAL_PROBES 2817131
-  #define GLOBAL_AVERAGE 3.60428996442066
-#endif
-*/
-
-//#define TOTAL_FEATURES   5
 #define MAX_EPOCHS       100
 #define MIN_EPOCHS       10                  // Minimum number of epochs per feature
 #define MIN_IMPROVEMENT  0.00001              // Minimum improvement required to continue current feature
@@ -56,8 +40,8 @@ double LAMDA2ub =            0.01;        // reg for biases
 double LRATE2mb =            0.01;        // Learning rate parameter for biases
 double LAMDA2mb =            0.01;          // reg for biases
 
-double dP =            	1.0; //0.2; //1.0;          // radius
-double ksi =		0.8; //0.999; //0.8;           // constraint factor 
+double dP =            	1.0;        // radius
+double ksi =		0.8;          // constraint factor 
 
 struct connection_details
 {
@@ -168,8 +152,6 @@ double **F_cust_features_gradients;   // Array of gradients for features by cust
 double *F_m_bias_gradients;
 double *F_c_bias_gradients;
 
-//double diff_uv[TOTAL_FEATURES];
-
 int *user_connections_size;
 int **user_connections;
 
@@ -192,26 +174,6 @@ main (int argc, char**argv) {
 
   lgopen(argc,argv);
 
-/*
-  lg ("\n-----------------------\nPREDICTION MODE: %s\n-----------------------\n", (PREDICTION_MODE == 1)?"qualifying":"probe");
-
-  
-  lg ("------------------------\n");
-  lg ("TOTAL_FEATURES %i\n", TOTAL_FEATURES);
-  lg ("MIN_IMPROVEMENT %f\n", MIN_IMPROVEMENT);
-  lg ("INIT_SEED_Mb %f\n", INIT_SEED_Mb);
-  lg ("INIT_VARIANCE_Mb %f\n", INIT_VARIANCE_Mb);
-  lg ("INIT_SEED_Cb %f\n", INIT_SEED_Cb);
-  lg ("INIT_VARIANCE_Cb %f\n", INIT_VARIANCE_Cb);
-  lg ("INIT_SEED_M %f\n", INIT_SEED_M);
-  lg ("INIT_VARIANCE_M %f\n", INIT_VARIANCE_M);
-  lg ("INIT_SEED_C %f\n", INIT_SEED_C);
-  lg ("INIT_VARIANCE_C %f\n", INIT_VARIANCE_C);
-  lg ("dP %f\n", dP);
-  lg ("ksi %f\n", ksi);
-  lg ("------------------------\n\n");
-
-*/
 
   double prediction;
   unsigned int i,h;
@@ -325,18 +287,6 @@ rating_range=max_r-min_r;
 
 avg = (GLOBAL_AVERAGE - min_r) / rating_range;
 GLOBAL_SCALED_AVERAGE = log(avg / (1 - avg));
-
-//printf("Maximum rating is %d, Minimum rating is %d and Range is %d\n",max_r,min_r,rating_range);
-//exit(-1);
-
-
-//printf("%d %d %d %d %f\n",TOTAL_MOVIES, TOTAL_CUSTOMERS, TOTAL_RATES, TOTAL_PROBES,GLOBAL_AVERAGE);
-//exit(-1);
-
-// ****** SVD *********** //
-
-//movie_features = ( double** )malloc(TOTAL_MOVIES*sizeof( double* ));
-//cust_features = ( double** )malloc(TOTAL_CUSTOMERS*sizeof( double* ));
 
 movie_features = ( double** )malloc(TOTAL_MOVIES * sizeof(double *));
 
@@ -514,8 +464,6 @@ user_connections = ( int** )malloc(TOTAL_CUSTOMERS * sizeof(int *));
 user_connections_size =  (int *)malloc(sizeof(int)*TOTAL_CUSTOMERS);
 
 
-// ***************** //
-
 user_movies = ( int** )malloc(TOTAL_CUSTOMERS * sizeof(int *));
 
 
@@ -541,8 +489,6 @@ user_ratings = ( int** )malloc(TOTAL_CUSTOMERS * sizeof(int *));
 /* stop timer and display time */
   stop = time(NULL);
   diff = difftime(stop, start);
-//  printf("Defined global arrays: Time elapsed is %f sec\n", diff);
-
 
 // *** CREATE PROBE *** //
 
@@ -574,14 +520,12 @@ mysql_free_result(res);
   /* stop timer and display time */
   stop = time(NULL);
   diff = difftime(stop, start);
-//  printf("Created Probe arrays: Time elapsed is %f sec\n", diff);
 
   // start timer
   start = time(NULL);  
 
   // RUN SVD
-//  lg("\n\nCalculating features...\n");
-
+  
   sscanf(argv[0], "./%s", algorithm_name);
   lg("%s\t\t",algorithm_name);
   calc_features(TOTAL_FEATURES);
@@ -589,24 +533,14 @@ mysql_free_result(res);
   /* stop timer and display time */
   stop = time(NULL);
   diff = difftime(stop, start);
-//  printf("\nTrained SVD in %f sec\n", diff);
   lg("%f sec\n", diff);
 
 exit(-1);
 
-  // *** SAVE FEATURES ***
-  // lg("\n\nSaving features files...\n");
-  //  save_new_features_files();
-
-
- // save_predictions();
-
-//////save_residuals();
 
   // stop timer and display time 
   stop = time(NULL);
   diff = difftime(stop, start);
-//  lg("\nPredictions: Time elaspsed is %f sec\n", diff);
 
   exit(0);
 }
@@ -650,20 +584,13 @@ void calc_features(int TOTAL_FEATURES) {
   double diff_uv[TOTAL_FEATURES]; //lol
 
 
- /* 
-  unsigned int startIdx, endIdx;
-  unsigned int probeStartIdx, probeEndIdx;  
-*/
-
   // INIT all feature values 
   for (f=0; f<TOTAL_FEATURES; f++) {
     for (i=0; i<TOTAL_MOVIES; i++) {
       movie_features[i][f] = INIT_M;
-     // printf("%f\n",movie_features[i][f]);
     }
     for (i=0; i<TOTAL_CUSTOMERS; i++) {
       cust_features[i][f] = INIT_C;
-    //  printf("%f\n",cust_features[i][f]);
     }
   }
 
@@ -671,11 +598,9 @@ void calc_features(int TOTAL_FEATURES) {
   // *** INIT biases
   for (i=0; i<TOTAL_MOVIES; i++) {
     m_bias[i] = INIT_Mb;
-   // printf("%f\n",m_bias[i]);
   }
   for (i=0; i<TOTAL_CUSTOMERS; i++) {
     c_bias[i] = INIT_Cb;
-    //printf("%f\n",c_bias[i]);
   }
 
 
@@ -694,9 +619,6 @@ while ((row = mysql_fetch_row(res)) !=NULL) {
 /* clean up the database result set */
 mysql_free_result(res);
 
-//printf("Found %d movies in the training set\n", num_train_movies);
-//exit(-1);
-
 
 //////////Now we select train  movies and store them in an array
 
@@ -714,7 +636,6 @@ res = mysql_perform_query(conn,query_string);
  h=0;////just a counter
   while ((row = mysql_fetch_row(res)) !=NULL) {
       train_movies_id[h]=atoi(row[0]);
-      //printf("%d %d\n",h+1, train_movies_id[h]);
       h++;
  }
 
@@ -755,14 +676,11 @@ res = mysql_perform_query(conn,query_string);
  h=0;////just a counter
   while ((row = mysql_fetch_row(res)) !=NULL) {
       train_users_id[h]=atoi(row[0]);
-      //printf("%d %d\n",h+1, train_users_id[h]);
       h++;
 }
 
 /* clean up the database result set */
 mysql_free_result(res);
-
-//exit(-1);
 
 ////////Now we have the train set users stored
 
@@ -784,7 +702,6 @@ res = mysql_perform_query(conn,query_string);
  h=0;////just a counter
   while ((row = mysql_fetch_row(res)) !=NULL) {
       all_users_id[h]=atoi(row[0]);
-      //printf("%d %d\n",h+1, all_users_id[h]);
       h++;
 }
 
@@ -801,7 +718,6 @@ mysql_free_result(res);
 
 
 custId = c+1;
-//printf("CustId: %d\n", custId);
 
 //////Find out how many movies the user have rated
 
@@ -843,15 +759,12 @@ user_ratings[c] = ( int* )malloc(num_movies * sizeof(int));
 
 sprintf(query_string,"select item_id, rating_value FROM train WHERE user_id=%d",custId);
 
-//printf("%s\n",query_string);
-
 res = mysql_perform_query(conn,query_string);
 
  h=0;////just a counter
   while ((row = mysql_fetch_row(res)) !=NULL) {
       user_movies[c][h]=atoi(row[0]);
       user_ratings[c][h]=atoi(row[1]);
-      //printf("%d %d\n",user_movies[c][h],user_ratings[c][h]);
       h++;
 }
 
@@ -906,13 +819,10 @@ res = mysql_perform_query(conn,query_string);
 mysql_free_result(res);
 
 
-///////We got all neigbours for this user
- } // if 
+ }
 
-} // for (all users)
+}
 
-
-//exit(-1);
 
   // Keep looping until you have stopped making significant (probe_rmse) progress
     while ((probe_rmse < probe_rmse_last - MIN_IMPROVEMENT)) { 
@@ -931,11 +841,9 @@ mysql_free_result(res);
   for (f=0; f<TOTAL_FEATURES; f++) {
     for (i=0; i<TOTAL_MOVIES; i++) {
       movie_features_gradients[i][f] = 0.0;
-     // printf("%f\n",movie_features[i][f]);
     }
     for (i=0; i<TOTAL_CUSTOMERS; i++) {
       cust_features_gradients[i][f] = 0.0;
-    //  printf("%f\n",cust_features[i][f]);
     }
   }
 
@@ -943,11 +851,9 @@ mysql_free_result(res);
 // *** RESET biases gradients
   for (i=0; i<TOTAL_MOVIES; i++) {
     m_bias_gradients[i] = 0.0;
-   // printf("%f\n",m_bias[i]);
   }
   for (i=0; i<TOTAL_CUSTOMERS; i++) {
     c_bias_gradients[i] = 0.0;
-    //printf("%f\n",c_bias[i]);
   }
 
 
@@ -961,12 +867,6 @@ mysql_free_result(res);
 
       custId = train_users_id[c];
 
-      //custId = c+1;
-
-      //printf("Train_custId %d\n", custId);
-
-
-
 
 /// READY FOR ITERATIONS ////
 
@@ -975,17 +875,11 @@ mysql_free_result(res);
 
       for (i=0; i< user_movies_size[custId-1]; i++) {
 
-        //movieId=movie_id[i];
-
         movieId=user_movies[custId-1][i];
-
-        //printf("%d %d \n",movieId, user_ratings[custId-1][i]);
 
         p = predict_svd_rating (movieId, custId, TOTAL_FEATURES);
 
         err2 = - ( (double)user_ratings[custId-1][i] - (rating_range*p + min_r) );
-
-        //err2 = - ( ((double)rating[i] - min_r) / rating_range - p);
 
         sq += err2*err2;
 
@@ -1014,12 +908,7 @@ mysql_free_result(res);
   }
 
 
-} //Pass over TRAIN users
-
-//exit(-1);
-
-
-//exit(-1);
+} 
 
 
 
@@ -1028,10 +917,7 @@ if (cnt==1) {
 for (c=0; c < TOTAL_CUSTOMERS; c++)  {
 
       d=c;
-
-      //custId = all_users_id[c];
       custId = c+1;
-      //printf("User %d\n",custId);
       
 
 cf_bias_vt=0.0;
@@ -1053,10 +939,6 @@ Tuv=0.0;
 Tuv=1.0/user_connections_size[c];
 
 
-//printf("Tuv is %lf because neighbors are %d\n",Tuv,num_neighbours);
-//exit(-1);
-
-
   for (i=0;i<user_connections_size[c];i++) {
 
        vcustId=user_connections[c][i];
@@ -1064,7 +946,6 @@ Tuv=1.0/user_connections_size[c];
       for (f=0;f<TOTAL_FEATURES;f++) {
       diff_uv[f] += cust_features[vcustId - 1][f];
 
-      //printf("%lf\n", diff_uv[f]);
       }
   
 
@@ -1073,15 +954,7 @@ Tuv=1.0/user_connections_size[c];
    }
 
 
-     //diffUV[f]= cust_features[custId - 1][f] - diff_uv[f]*Tuv;
-     //cf_bias_v = c_bias[custId - 1] - cf_bias_vt*Tuv;
-
-///////We got all DIFFS for this user (and its neighbors)
-
-
-} else {
-//printf("Found a case for %d\n", custId);
-}
+} 
 
 //SOCIAL CONSTRAINTS
 
@@ -1092,11 +965,6 @@ Tuv=1.0/user_connections_size[c];
         F_cust_features_gradients[custId - 1][f] = diff_uv[f]*Tuv;      
          
         }
- 
-
-     //if (custId==49288)
-     //exit(-1);
-
       
     if ((d!=0) && (d%1000000 == 0)){
 
@@ -1106,20 +974,6 @@ Tuv=1.0/user_connections_size[c];
     start = time(NULL);
 
    }
-  
-
-  //free((void *)movie_id);
-  //free((void *)rating);
- 
-
-//     printf("Eimai mesa!\n");          
-
-//    for (f=0; f<TOTAL_FEATURES; f++) {
-//    for (i=0; i<TOTAL_MOVIES; i++) {
-//     printf("%g ",movie_features[i][f]);
-//    }
-//    printf("\n");
-//}
 
 } // TOTAL Customers
 
@@ -1139,27 +993,12 @@ for (f=0; f<TOTAL_FEATURES; f++) {
 
 
 } else {
-/*
-      for (f=0; f<TOTAL_FEATURES; f++) {
-      for (i=0; i< num_train_users; i++) {
-      custId = train_users_id[i];
-      F_cust_features_gradients[custId - 1][f] = D_cust_features[custId - 1][f];
-    }
-  }
 
-
-    for (i=0; i< num_train_users; i++) {
-      custId = train_users_id[i];
-     F_c_bias_gradients[custId - 1] = D_c_bias[custId - 1];
-  }
-
-*/
 
 for (f=0; f<TOTAL_FEATURES; f++) {
     for (i=0; i < num_train_movies; i++) {
      movieId = train_movies_id[i];
      F_movie_features_gradients[movieId - 1][f] = D_movie_features[movieId - 1][f];
-     //printf("FFFF %g ",F_movie_features_gradients[movieId - 1][f]);
     }
    }
 
@@ -1214,15 +1053,8 @@ for (i=0; i < num_train_movies; i++) {
 
 dQ=-ksi*dP*sqrt(IJJ);
 
-// ************* DEBUG *************
-//rmse=0.5*sq;
-//rmse = sqrt(sq/TOTAL_RATES);
-//printf("dQ is %g and dE=%g because RMSE is %g and RMSE_LAST is %g\n", dQ, (rmse-rmse_last), rmse, rmse_last);
-
 
 lamda2=0.5*1/sqrt(((IJJ*dP*dP)-dQ*dQ)/(IFF*IJJ-IJF*IJF));
-
-//lamda2=0.5*(((IJJ*dP^2)-dQ^2)/(IFF*IJJ-IJF^2))^(-0.5);
 
 lamda1=(IJF-(2*lamda2*dQ))/IJJ;
 
@@ -1233,7 +1065,6 @@ for (f=0; f<TOTAL_FEATURES; f++) {
     for (i=0; i < num_train_movies; i++) {
      movieId = train_movies_id[i];
      D_movie_features[movieId - 1][f] = -((lamda1/(2*lamda2))*movie_features_gradients[movieId - 1][f]) + ((1/(2*lamda2))*F_movie_features_gradients[movieId - 1][f]);
-    //printf("DDD %g ",D_movie_features[movieId - 1][f]);
    }
 
 
@@ -1256,34 +1087,11 @@ for (i=0; i < num_train_movies; i++) {
   }
 
 
-// ************* DEBUG *************
-/*
-dwdw=0.0;
-
-for (f=0; f<TOTAL_FEATURES; f++) {
-    for (i=0; i< num_train_users; i++) {
-      custId = train_users_id[i];
-     dwdw += pow(D_cust_features[custId - 1][f],2);
-    }
-  }
-
-
-  for (i=0; i< num_train_users; i++) {
-     custId = train_users_id[i];
-     dwdw += pow(D_c_bias[custId - 1],2);
-  }
-
-printf("dwdw is %g and dP^2 is %g\n", dwdw,dP*dP);
-*/
-
 
  for (c=0; c < TOTAL_CUSTOMERS; c++)  {
 
       d=c;
-
-      //custId = all_users_id[c];
       custId = c+1;
-      //printf("User %d\n",custId);
       
 
 cf_bias_vt=0.0;
@@ -1306,18 +1114,12 @@ Tuv=0.0;
 Tuv=1.0/user_connections_size[c];
 
 
-//printf("Tuv is %lf because neighbors are %d\n",Tuv,num_neighbours);
-//exit(-1);
-
-
   for (i=0;i<user_connections_size[c];i++) {
 
        vcustId=user_connections[c][i];
      
       for (f=0;f<TOTAL_FEATURES;f++) {
       diff_uv[f] += D_cust_features[vcustId - 1][f];
-
-      //printf("%lf\n", diff_uv[f]);
       }
   
 
@@ -1326,15 +1128,8 @@ Tuv=1.0/user_connections_size[c];
    }
 
 
-     //diffUV[f]= cust_features[custId - 1][f] - diff_uv[f]*Tuv;
-     //cf_bias_v = c_bias[custId - 1] - cf_bias_vt*Tuv;
 
-///////We got all DIFFS for this user (and its neighbors)
-
-
-} else {
-//printf("Found a case for %d\n", custId);
-}
+} 
 
 //SOCIAL CONSTRAINTS
 
@@ -1345,10 +1140,6 @@ Tuv=1.0/user_connections_size[c];
         F_cust_features_gradients[custId - 1][f] = diff_uv[f]*Tuv;      
          
         }
- 
-
-     //if (custId==49288)
-     //exit(-1);
 
       
     if ((d!=0) && (d%1000000 == 0)){
@@ -1360,19 +1151,6 @@ Tuv=1.0/user_connections_size[c];
 
    }
   
-
-  //free((void *)movie_id);
-  //free((void *)rating);
- 
-
-//     printf("Eimai mesa!\n");          
-
-//    for (f=0; f<TOTAL_FEATURES; f++) {
-//    for (i=0; i<TOTAL_MOVIES; i++) {
-//     printf("%g ",movie_features[i][f]);
-//    }
-//    printf("\n");
-//}
 
 } // TOTAL Customers
 
@@ -1407,10 +1185,6 @@ for (f=0; f<TOTAL_FEATURES; f++) {
     c_bias[custId - 1] += D_c_bias[custId - 1];
   }
 
-
-
-
-//   printf("Calculating Probe...\n");
 
 // Open file to store probes
 	char probes_file[80];
@@ -1455,24 +1229,13 @@ for (f=0; f<TOTAL_FEATURES; f++) {
     diff = difftime(stop_e, start_e);
 
     rmse = sqrt(sq/TOTAL_RATES);
-    //rmse=0.5*sq;
     probe_rmse = sqrt(probe_sq/TOTAL_PROBES);
-    
-    //epochs_probe_error[e]=probe_rmse;
 
- //   lg("     <set x='%d' y='%g' probe='%f' /> time: %f sec\n", cnt, rmse, probe_rmse, (double) diff);
-
-    //exit(-1);
     
    avg_diff+=diff;
 
   }
 
-//    printf("\nAverage time spent in each  iteration is %f\n",  avg_diff/cnt);
- 
-
-  //array_min(epochs_probe_error, &final_probe_rmse, &final_epochs_for_probe);
-  //printf("\nBest probe is %lf at Iteration %d\n",final_probe_rmse, final_epochs_for_probe);
 
  lg("%f\t\t%d\t\t%f sec\t\t", cnt,probe_rmse,avg_diff/cnt);
 /* clean up the database link */
@@ -1489,14 +1252,9 @@ double predict_svd_rating (int movieId, int custId, int TOTAL_FEATURES) {
 
   for (f=0; f<TOTAL_FEATURES; f++) {
      sum += movie_features[movieId - 1][f] * cust_features[custId - 1][f];
-     //sum += cust_features[custId - 1][f];
   }
 
-   //printf("Sum BEFORE biases %f\n",sum);
-
    sum += c_bias[custId - 1] + m_bias[movieId - 1];
-
-   //printf("Sum AFTER biases %f\n",sum);
 
 
    // *** Add residuals
@@ -1515,15 +1273,7 @@ double sigmoid (double alpha) {
 void lgopen(int argc, char**argv) {
 	lgfile=fopen("log.txt","a");
 	if(!lgfile) error("Cant open log file");
-	//lg("----------------------------------------------\n");
-	/* Print out the date and time in the standard format.  */
 	time_t curtime=time(NULL);
-	//lg("%s",ctime(&curtime));
-
-	//int i;
-	//for(i=0;i<argc;i++)
-	//	lg("%s ",argv[i]);
-	//lg("\n");
 }
 
 void lg(char *fmt,...) {

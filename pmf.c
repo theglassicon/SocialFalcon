@@ -7,25 +7,8 @@
 #include <mysql.h>
 
 
-/* *** mode: 0 for probe *** */
-/* *** mode: 1 for qual  *** */
+
 #define PREDICTION_MODE 0
-
-/*
-#if PREDICTION_MODE==0
-  #define TOTAL_RATES 99072112
-  #define TOTAL_PROBES 1408395
-  #define GLOBAL_AVERAGE 3.603304
-#else
-  #define TOTAL_RATES 100480507
-  #define TOTAL_PROBES 2817131
-  #define GLOBAL_AVERAGE 3.60428996442066
-#endif
-*/
-
-
-
-//#define TOTAL_FEATURES   10
 #define MIN_EPOCHS       10                  // Minimum number of epochs per feature
 #define MAX_EPOCHS       10                  // Max epochs per feature
 #define MIN_IMPROVEMENT  0.00005              // Minimum improvement required to continue current feature
@@ -57,9 +40,6 @@ double LAMDA2ub =            0.01;        // reg for biases
 double LRATE2mb =            0.005;        // Learning rate parameter for biases
 double LAMDA2mb =            0.01;          // reg for biases
 
-
-//bias_reg=0.01 reg_u=0.015 reg_i=0.015
-//learn_rate=0.01 bias_learn_rate=1
 
 struct connection_details
 {
@@ -168,32 +148,6 @@ char algorithm_name[20];
 main (int argc, char**argv) {
 
   lgopen(argc,argv);
-/*
-  lg ("\n-----------------------\nPREDICTION MODE: %s\n-----------------------\n", (PREDICTION_MODE == 1)?"qualifying":"probe");
-
-  
-  lg ("------------------------\n");
-  lg ("TOTAL_FEATURES %i\n", TOTAL_FEATURES);
-  lg ("MIN_IMPROVEMENT %f\n", MIN_IMPROVEMENT);
-  lg ("INIT_SEED_Mb %f\n", INIT_SEED_Mb);
-  lg ("INIT_VARIANCE_Mb %f\n", INIT_VARIANCE_Mb);
-  lg ("INIT_SEED_Cb %f\n", INIT_SEED_Cb);
-  lg ("INIT_VARIANCE_Cb %f\n", INIT_VARIANCE_Cb);
-  lg ("INIT_SEED_M %f\n", INIT_SEED_M);
-  lg ("INIT_VARIANCE_M %f\n", INIT_VARIANCE_M);
-  lg ("INIT_SEED_C %f\n", INIT_SEED_C);
-  lg ("INIT_VARIANCE_C %f\n", INIT_VARIANCE_C);
-  lg ("LRATE1u %f\n", LRATE1u);
-  lg ("LAMDA1u %f\n", LAMDA1u);
-  lg ("LRATE1m %f\n", LRATE1m);
-  lg ("LAMDA1m %f\n", LAMDA1m);
-  lg ("LRATE2ub %f\n", LRATE2ub);
-  lg ("LAMDA2ub %f\n", LAMDA2ub);
-  lg ("LRATE2mb %f\n", LRATE2mb);
-  lg ("LAMDA2mb %f\n", LAMDA2mb);
-  lg ("------------------------\n\n");
-
-*/
 
   float prediction;
   unsigned int i,h;
@@ -306,14 +260,9 @@ rating_range=max_r-min_r;
 avg = (GLOBAL_AVERAGE - min_r) / rating_range;
 GLOBAL_SCALED_AVERAGE = log(avg / (1 - avg));
 
-//printf("%d %d %d %d %f\n",TOTAL_MOVIES, TOTAL_CUSTOMERS, TOTAL_RATES, TOTAL_PROBES,GLOBAL_AVERAGE);
-//exit(-1);
 
 // ****** SVD *********** //
 
-
-//movie_features = ( float** )malloc(TOTAL_MOVIES*sizeof( float* ));
-//cust_features = ( float** )malloc(TOTAL_CUSTOMERS*sizeof( float* ));
 
 movie_features = ( float** )malloc(TOTAL_MOVIES * sizeof(float *));
 
@@ -382,7 +331,6 @@ user_ratings = ( int** )malloc(TOTAL_CUSTOMERS * sizeof(int *));
 /* stop timer and display time */
   stop = time(NULL);
   diff = difftime(stop, start);
-//  printf("Defined global arrays: Time elapsed is %f sec\n", diff);
 
 
 // *** CREATE PROBE *** //
@@ -412,13 +360,11 @@ res = mysql_perform_query(conn,query_string);
   /* stop timer and display time */
   stop = time(NULL);
   diff = difftime(stop, start);
-//  printf("Created Probe arrays: Time elapsed is %f sec\n", diff);
 
   // start timer
   start = time(NULL);  
 
   // RUN SVD
-//  lg("\n\nCalculating features...\n");
 
   sscanf(argv[0], "./%s", algorithm_name);
   lg("%s\t\t",algorithm_name);
@@ -427,23 +373,14 @@ res = mysql_perform_query(conn,query_string);
   /* stop timer and display time */
   stop = time(NULL);
   diff = difftime(stop, start);
-//  printf("\nTrained SVD in %f sec\n", diff);
   lg("%f sec\n", diff);
 exit(-1);
 
   // *** SAVE FEATURES ***
-  // lg("\n\nSaving features files...\n");
-  //  save_new_features_files();
-
-
- // save_predictions();
-
-//////save_residuals();
 
   // stop timer and display time 
   stop = time(NULL);
   diff = difftime(stop, start);
-//  lg("\nPredictions: Time elaspsed is %f sec\n", diff);
 
   exit(0);
 }
@@ -466,21 +403,14 @@ int c, d, h,f, e, i, custId, cnt = 0;
   int movieId;
   double cf, mf, cf_bias, mf_bias;
 
- 
- /* 
-  unsigned int startIdx, endIdx;
-  unsigned int probeStartIdx, probeEndIdx;  
-*/
 
   // INIT all feature values 
   for (f=0; f<TOTAL_FEATURES; f++) {
     for (i=0; i<TOTAL_MOVIES; i++) {
       movie_features[i][f] = INIT_M;
-     // printf("%f\n",movie_features[i][f]);
     }
     for (i=0; i<TOTAL_CUSTOMERS; i++) {
       cust_features[i][f] = INIT_C;
-    //  printf("%f\n",cust_features[i][f]);
     }
   }
 
@@ -488,11 +418,9 @@ int c, d, h,f, e, i, custId, cnt = 0;
   // *** INIT biases
   for (i=0; i<TOTAL_MOVIES; i++) {
     m_bias[i] = INIT_Mb;
-   // printf("%f\n",m_bias[i]);
   }
   for (i=0; i<TOTAL_CUSTOMERS; i++) {
     c_bias[i] = INIT_Cb;
-    //printf("%f\n",c_bias[i]);
   }
 
 
@@ -528,7 +456,6 @@ res = mysql_perform_query(conn,query_string);
  h=0;////just a counter
   while ((row = mysql_fetch_row(res)) !=NULL) {
       train_users_id[h]=atoi(row[0]);
-      //printf("%d %d\n",h+1, train_users_id[h]);
       h++;
 }
 //exit(-1);
@@ -582,15 +509,12 @@ user_ratings[c] = ( int* )malloc(num_movies * sizeof(int));
 
 sprintf(query_string,"select item_id, rating_value FROM train WHERE user_id=%d",custId);
 
-//printf("%s\n",query_string);
-
 res = mysql_perform_query(conn,query_string);
 
  h=0;////just a counter
   while ((row = mysql_fetch_row(res)) !=NULL) {
       user_movies[c][h]=atoi(row[0]);
       user_ratings[c][h]=atoi(row[1]);
-      //printf("%d %d\n",user_movies[c][h],user_ratings[c][h]);
       h++;
 }
 
@@ -603,7 +527,6 @@ mysql_free_result(res);
     
   // Keep looping until you have stopped making significant (probe_rmse) progress
   while ((probe_rmse < probe_rmse_last - MIN_IMPROVEMENT)) {
-  // for (e=0; e < 10; e++) { 
         
     start = time(NULL);
     start_e = time(NULL);
@@ -630,26 +553,10 @@ mysql_free_result(res);
 
 
       for (i=0; i< user_movies_size[c]; i++) {
-
-
-        //movieId=movie_id[i];
-
+      
         movieId=user_movies[c][i];
-
-        //printf("%d %d\n",custId, movieId);
-	      //exit(-1);
-        
-        /*  
-        movieId = nf_movies_c_index[i];
-        rating = (double) nf_scores_c_index[i];
-        */
-
-        // Predict rating and calc error
-       // printf("Will call predict\n");
       
         p = predict_svd_rating (movieId, custId, TOTAL_FEATURES);
-
-       // printf("After call to predict\n");
 
         err = ((float)user_ratings[c][i] - p);
 
@@ -675,9 +582,6 @@ mysql_free_result(res);
 
         }
 
-      // if (d>30000)
-      // printf("%d %d %d\n",d+1,custId,movieId);
-
     }
 
 
@@ -688,16 +592,12 @@ mysql_free_result(res);
 
     stop = time(NULL);
     diff = difftime(stop,start);
- //   printf("Done %d Customers in %f secs\n",d,diff);
     start = time(NULL);
 
    }
   
                
  }
-
-
-//   printf("Calculating Probe...\n");
 
 	char probes_file[80];
 	char str_features[20];
@@ -741,14 +641,10 @@ mysql_free_result(res);
 
     rmse = sqrt(sq/TOTAL_RATES);
     probe_rmse = sqrt(probe_sq/TOTAL_PROBES);
-
-//    lg("     <set x='%d' y='%f' probe='%f' /> time: %f sec\n", cnt, rmse, probe_rmse, (double) diff);
     
    avg_diff+=diff;
 
   }
-
-//  printf("\nAverage time spent in each  iteration is %f\n",  avg_diff/cnt);
  
   final_probe_rmse = probe_rmse;
   final_epochs_for_probe = cnt;
@@ -793,15 +689,7 @@ double sign (double x) {
 void lgopen(int argc, char**argv) {
 	lgfile=fopen("log.txt","a");
 	if(!lgfile) error("Cant open log file");
-//	lg("----------------------------------------------\n");
-	/* Print out the date and time in the standard format.  */
 	time_t curtime=time(NULL);
-//	lg("%s",ctime(&curtime));
-
-//	int i;
-//	for(i=0;i<argc;i++)
-//		lg("%s ",argv[i]);
-//	lg("\n");
 }
 
 void lg(char *fmt,...) {
