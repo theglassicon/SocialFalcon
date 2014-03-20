@@ -6,26 +6,9 @@
 #include <stdarg.h>
 #include <mysql.h>
 
-
-/* *** mode: 0 for probe *** */
-/* *** mode: 1 for qual  *** */
 #define PREDICTION_MODE 0
 
-/*
-#if PREDICTION_MODE==0
-  #define TOTAL_RATES 99072112
-  #define TOTAL_PROBES 1408395
-  #define GLOBAL_AVERAGE 3.603304
-#else
-  #define TOTAL_RATES 100480507
-  #define TOTAL_PROBES 2817131
-  #define GLOBAL_AVERAGE 3.60428996442066
-#endif
-*/
 
-
-
-//#define TOTAL_FEATURES   10
 #define MIN_EPOCHS       10                  // Minimum number of epochs per feature
 #define MAX_EPOCHS       10                  // Max epochs per feature
 #define MIN_IMPROVEMENT  0.00005              // Minimum improvement required to continue current feature
@@ -51,7 +34,6 @@
 #define W_INIT_VARIANCE  0.01
 #define W_INIT           (W_INIT_SEED + (2.0*(rand()/(float)(RAND_MAX)) - 1.0)*W_INIT_VARIANCE) //
 
-// # # # # # # # #  PARAMETERS FOR EPINIONS # # # # # # # # 
 
 double LRATE1u  =            0.003;        // Learning rate parameter for features
 double LAMDA1u  =            0.015;        // reg for features
@@ -66,30 +48,7 @@ double LRATE2mb =            0.003;        // Learning rate parameter for biases
 double LAMDA2mb =            0.015;          // reg for biases
 
 double LAMDA3 =              1.0;               // Regularization
-
-// # # # # # # # # # # # # # # # # # # # # # # # # # # # # #   
-
-
-
-// # # # # # # # #  PARAMETERS FOR FLIXTER # # # # # # # # 
-
-/*
-double LRATE1u  =            0.003;        // Learning rate parameter for features
-double LAMDA1u  =            0.015;        // reg for features
-double LRATE1m  =            0.003;        // Learning rate parameter for features
-double LAMDA1m  =            0.1;        // reg for features
-
-double  LRATE3  =            0.001;        // Learning rate parameter for weights
-
-double LRATE2ub =            0.003;        // Learning rate parameter for biases
-double LAMDA2ub =            0.015;        // reg for biases
-double LRATE2mb =            0.003;        // Learning rate parameter for biases
-double LAMDA2mb =            0.015;          // reg for biases
-
-double LAMDA3 =              1.0;               // Regularization
-*/
-
-// # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+ 
 
 
 struct connection_details
@@ -200,10 +159,6 @@ int *probe_real_scores;
 // *** //
 
 
-//double pu[TOTAL_FEATURES];
-//double pudot[TOTAL_FEATURES];
-//double pudotdot[TOTAL_FEATURES];
-
 
 int max_r,min_r;
 char algorithm_name[20];
@@ -211,33 +166,6 @@ char algorithm_name[20];
 main (int argc, char**argv) {
 
   lgopen(argc,argv);
-/*
-  lg ("\n-----------------------\nPREDICTION MODE: %s\n-----------------------\n", (PREDICTION_MODE == 1)?"qualifying":"probe");
-
-  
-  lg ("------------------------\n");
-  lg ("TOTAL_FEATURES %i\n", TOTAL_FEATURES);
-  lg ("MIN_IMPROVEMENT %f\n", MIN_IMPROVEMENT);
-  lg ("INIT_SEED_Mb %f\n", INIT_SEED_Mb);
-  lg ("INIT_VARIANCE_Mb %f\n", INIT_VARIANCE_Mb);
-  lg ("INIT_SEED_Cb %f\n", INIT_SEED_Cb);
-  lg ("INIT_VARIANCE_Cb %f\n", INIT_VARIANCE_Cb);
-  lg ("INIT_SEED_M %f\n", INIT_SEED_M);
-  lg ("INIT_VARIANCE_M %f\n", INIT_VARIANCE_M);
-  lg ("INIT_SEED_C %f\n", INIT_SEED_C);
-  lg ("INIT_VARIANCE_C %f\n", INIT_VARIANCE_C);
-  lg ("LRATE1u %f\n", LRATE1u);
-  lg ("LAMDA1u %f\n", LAMDA1u);
-  lg ("LRATE1m %f\n", LRATE1m);
-  lg ("LAMDA1m %f\n", LAMDA1m);
-  lg ("LRATE2ub %f\n", LRATE2ub);
-  lg ("LAMDA2ub %f\n", LAMDA2ub);
-  lg ("LRATE2mb %f\n", LRATE2mb);
-  lg ("LAMDA2mb %f\n", LAMDA2mb);
-  lg ("LRATE3 %f\n", LRATE3);
-  lg ("LAMDA3 %f\n", LAMDA3);
-  lg ("------------------------\n\n");
-*/
 
 
   float prediction;
@@ -321,10 +249,6 @@ while ((row = mysql_fetch_row(res)) !=NULL) {
 //clean up the database result set
 mysql_free_result(res);
 
-//printf("%d %d %d %d %f\n",TOTAL_MOVIES, TOTAL_CUSTOMERS, TOTAL_RATES, TOTAL_PROBES,GLOBAL_AVERAGE);
-//exit(-1);
-
-
 
 // Get maximum and minimum ratings from the ratings table
 
@@ -354,8 +278,6 @@ mysql_free_result(res);
 
 // ****** SVD *********** //
 
-//movie_features = ( float** )malloc(TOTAL_MOVIES*sizeof( float* ));
-//cust_features = ( float** )malloc(TOTAL_CUSTOMERS*sizeof( float* ));
 
 movie_features = ( float** )malloc(TOTAL_MOVIES * sizeof(float *));
 
